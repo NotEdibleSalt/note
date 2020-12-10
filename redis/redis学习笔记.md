@@ -652,13 +652,108 @@
 
 ## 事务
 
-​		redis中的事务不同于关系型数据库。redis中的事务更像一种通过队列保证多条命令串行化执行的手段。在redis中没有回滚的概念，一条命令的报错并不会影响其他命令的执行。并且redis没有行锁的盖尼奥，也即是说其他线程是可以对事务中正在修改的数据进行变更。
+​		redis中的事务不同于关系型数据库。redis中的事务更像一种通过队列保证多条命令串行化执行的手段。在redis中没有回滚的概念，一条命令的报错并不会影响其他命令的执行。并且redis没有行锁的，也即是说其他线程是可以对事务中正在修改的数据进行变更。
 
+1.  命令出错不会回滚
+2.  命令出错，执行不会停止。即接下来的命令依然会执行
+3.  discord和exec命令会取消watch监听的key
 
+相关命令：
 
-## spring cloud redis
+- [MULTI](http://www.redis.com.cn/commands/multi)                     // 开启事务，使用此命令后，之后输入的命令都会进入一个队列，命令会检查语法但不执行
+- [DISCARD](http://www.redis.com.cn/commands/discard)            // 取消事务，使用此命令后，会取消之前输入的命令
+- [EXEC](http://www.redis.com.cn/commands/exec)                  // 提交事务，使用此命令后，会执行之前输入的命令
+- [WATCH](http://www.redis.com.cn/commands/watch)           // 监视一或多个key,如果在事务执行之前，被监视的key有改动，则事务被打断 （ 类似乐观锁 ）
+- [UNWATCH](http://www.redis.com.cn/commands/unwatch)  //  取消watch对所有key的监视（ `EXEC` 或`DISCARD`，也会取消watch对所有key的监视 
 
-### 依赖
+## spring data redis
+
+### 关键依赖
+
+~~~xml
+ <dependency>
+   		<groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-redis</artifactId>
+        <version>2.3.3.RELEASE</version>
+</dependency>
+<dependency>
+        <groupId>io.lettuce</groupId>
+        <artifactId>lettuce-core</artifactId>
+        <version>5.3.3.RELEASE</version>
+</dependency>
+~~~
+
+###  yml配置
+
+~~~yml
+spring:
+  redis:
+    host: 127.0.0.1   
+    port: 6379
+    password: password
+  cache:   # 配置缓存管理
+    type: redis
+    redis:
+      time-to-live: 200000
+      use-key-prefix: true
+      key-prefix: spring_cache_
+~~~
+
+### 配置类
+
+~~~java
+@Configuration
+@EnableCaching  // 启用注解驱动的缓存管理功能，即@Cacheable、@CachePut、@CacheEvict
+public class RedisConfig {
+
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        return RedisCacheManager.create(connectionFactory);
+    }
+
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+
+        // 设置序列化方式
+        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(connectionFactory);
+        redisTemplate.setKeySerializer(RedisSerializer.string());
+        redisTemplate.setValueSerializer(RedisSerializer.json());
+        redisTemplate.setHashKeySerializer(RedisSerializer.string());
+        redisTemplate.setHashValueSerializer(RedisSerializer.json());
+        redisTemplate.setDefaultSerializer(RedisSerializer.json());
+
+        return redisTemplate;
+    }
+}
+
+~~~
+
+### 使用
+
+注入RedisTemplate或StringRedisTemplate，调用其中的方法即可
+
+- opsForValue                          // Redis String 类型相关操作
+- opsForHash                          // Redis Hash类型相关操作
+- opsForList                            // Redis List类型相关操作
+- opsForZSet                          // Redis Zset类型相关操作
+- opsForSet                            // Redis Set类型相关操作
+- opsForGeo                         // Redis Geo类型相关操作
+- opsForHyperLogLog     // Redis HyperLogLog类型相关操作
+- opsForStream                 // Redis Stream相关操作
+
+示例:
+
+~~~java
+stringRedisTemplate.opsForValue().set("name", "小明");
+
+redisTemplate.opsForHash().put("books", "java", "16");
+redisTemplate.opsForHash().put("books", "python", "16");
+
+redisTemplate.opsForZSet().add("水果", "苹果", 4);
+redisTemplate.opsForZSet().add("水果", "香蕉", 3);
+
+~~~
 
 
 
