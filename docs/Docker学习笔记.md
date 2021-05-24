@@ -55,7 +55,9 @@
    
 3. 运行容器
 
-4. 
+4. 导出容器
+
+5. 导入容器
 
 ## Dockerfile
 
@@ -774,5 +776,25 @@ docker stack deploy -c docker-compose.yml wordpress
 
 #### down：移除服务
 
-
+```yaml
+version: '3.3' 
+services: 
+  node1: # 服务名称 
+    image: registry.docker.heyue/cita/cita-run:ubuntu-18.04-20190419 # 镜像名称 
+    hostname: node1
+    labels: 
+      co.elastic.logs/fileset.stdout: cita_node1
+      aliyun.logs.citanode1: stdout
+    deploy: 
+      placement: 
+        constraints: 
+          - engine.labels.cita == node1 # 部署节点 
+     #ports: # - "1337:1337" # 端口个映射
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50M"
+        max-file: 7 
+    environment: - USER_ID volumes: - /data/cita:/opt/cita-run # 节点⽂件存放路径映射
+```
 
