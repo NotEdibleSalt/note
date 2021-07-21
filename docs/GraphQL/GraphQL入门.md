@@ -1,6 +1,6 @@
 # Spring GraphQL初体验
 
-`GraphQL `是一个用于API的查询语言，通过`GraphQL `可以实现按需获取数据
+`GraphQL `是一个用于API的查询语言，通过`GraphQL `可以实现按需获取数据。最近Spring发布了`Spring GraphQL`项目，将GraphQL和Spring结合在一起，可以通过`Spring Boot`的方式使用`GraphQL`
 
 ## 引入依赖
 
@@ -55,8 +55,6 @@
 ~~~
 
 ## 编写yml配置文件
-
-编写spring boot项目的配置文件，在配置文件中指定`schema`文件的位置
 
 ```yaml
 server:
