@@ -1,17 +1,17 @@
 # WebFlux学习笔记
 
-`WebFlux`是一个基于`Reactor`的`异步、非阻塞`的web框架。`WebFlux`可以运行在`Netty`, `Undertow`和`Servlet 3.1以上`的容器中
+`WebFlux`是一个基于`Reactor`的`异步、非阻塞`的web框架。`WebFlux`可以运行在`Netty`, `Undertow`和`Servlet 3.1以上`的容器中。
 
 > `WebFlux`并不能使接口的响应时间缩短，它仅仅能够提升吞吐量和伸缩性
 
 `WebFlux`提供了两种使用方式：注解式（[Annotated Controllers](https://docs.spring.io/spring-framework/docs/current/reference/html/web-reactive.html#webflux-controller)）和 函数式（[Functional Endpoints](https://docs.spring.io/spring-framework/docs/current/reference/html/web-reactive.html#webflux-fn)）
 
 - 注解式：和`SpringMvc`的注解一致，使用`RestController`、`GetMapping`、`PostMapping`等注解
-- 函数式：基于Lambda表达式，使用Function描述请求端点
+- 函数式：基于Lambda表达式，使用`Function`描述请求端点
 
 ## 注解式（[Annotated Controllers](https://docs.spring.io/spring-framework/docs/current/reference/html/web-reactive.html#webflux-controller)）
 
-
+和`SpringMvc`的注解一致，使用`RestController`、`GetMapping`、`PostMapping`等注解，支持`Spring validation`参数效验
 
 ## 函数式（[Functional Endpoints](https://docs.spring.io/spring-framework/docs/current/reference/html/web-reactive.html#webflux-fn)）
 
@@ -84,13 +84,46 @@ HandlerFunction<ServerResponse> helloWorld = request -> ServerResponse.ok().body
 
 ### RouterFunction
 
+`RouterFunction`负责为请求找到对应的`HandlerFunction`进行处理
+
+```java
+RouterFunction<ServerResponse> route = RouterFunctions.route()
+    .GET("/person/{id}",, handler::getPerson)
+    .POST("/person", handler::createPerson)
+    .build();
+```
+
+#### RequestPredicate（请求断言）
+
+`GET`、`POST`等方法都有用于接受请求断言参数的重载方法。请求方法和路径匹配后,`RequestPredicate`返回true的请求才会被对应的`HandlerFunction`处理
+
+![image-20210812144132561](1.png)
+
+```java
+RouterFunction<ServerResponse> route = route()
+         // accept限制了该请求的类型是JSON格式
+        .GET("/person/{id}", accept(APPLICATION_JSON), handler::getPerson)
+        .POST("/person", handler::createPerson)
+        .build();
+```
+
+#### Nested Routes（嵌套路由）
 
 
 
+使用`path`方法可以将多个请求的相同前缀提取出来
+
+```java
+RouterFunction<ServerResponse> route = route()
+    .path("/person", builder -> builder 
+        .GET("/{id}", accept(APPLICATION_JSON), handler::getPerson)
+        .POST("/person", handler::createPerson))
+    .build();
+```
 
 ### 参数验证
 
-可以使用Spring validation进行参数验证
+可以使用`Spring validation`进行参数验证
 
 1. 添加依赖
 
